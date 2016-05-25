@@ -68,6 +68,7 @@ include 'page_header.php';
 </style>
 <script>
     function get_data(page_type,type,trans_num) {
+        alert("kai hiwatari")
         notSubmit=true
         if(type=="View")
         document.getElementById('form1').action = 'view_datas.php?trans_num='+trans_num+"&page_type="+page_type;
@@ -172,7 +173,9 @@ include 'page_header.php';
     {
         test="confirm_btn_reject(\""+page_type+"\","+trans_num+",\""+type+"\")"
         document.getElementById('reject_btn').innerHTML="<input type='button' value='Confirm' onclick='"+test+"'> <input type='button' value='Cancel'>";
-        document.getElementById('reject_div').style.display="block"
+        //document.getElementById('reject_div').style.display="block"
+		alert("kai")         
+         $( "#reject_div" ).dialog( "open" );
     }
     function confirm_btn_reject(page_type,trans_num,status)
     {
@@ -190,6 +193,13 @@ include 'page_header.php';
           document.getElementById('type').value=type
             document.form1.submit();
     }
+    function reject_cancel()
+    {
+    	$('#reject_div').hide()
+    }
+    $(function() {
+    $( "#reject_div" ).dialog();
+  });
 </script>
 <div id='getCheckDetails' style='z-index:11;width:270px;display:none;position: fixed;top:15%;left:40%;border:1px solid black;background-color:white;padding:10px'>
     <table>
@@ -223,7 +233,7 @@ $type=$_REQUEST['type'];
             </td>
         </tr>
         <tr>
-            <td style='padding:10px;text-align:center' id='reject_btn'>
+            <td style='padding:10px;text-align:center' id='reject_btn' onclick='reject_cancel()'>
             </td>
         </tr>
     </table>
@@ -285,6 +295,7 @@ else
     $column=array('Letter Code','Date','Requestor','Company Name','Supplier','Secretary','Payment Type','Total Amount');
     $val=array('letter_code','date_created','requestor','company_name','supplier','secretary','payment_type','total_amount','status','trans_no');
 }
+echo $select;
 $select2=str_replace("*","id",$select);
 $result = $conn->query($select2);
 $rowcount=mysqli_num_rows($result);
@@ -378,11 +389,9 @@ echo "<tr>
             echo "<tr>";
             for($k=0;$k<count($data[$a])-1;$k++)
                 echo "<td>".$data[$a][$k]."</td>";
-            //    echo "<br>".$data[$a][$k-1];
           if(!empty($access[$data[$a][$k-1]]))
           {
             if($data[$a][$k-1]!='Received')
-            echo "<td><input type='button' onclick='button_press(this.value,".$data[$a][$k].")' value='".$data[$a][$k-1]."'></td>";
             else "<td></td>";
           }
           if(!empty($access['View']))

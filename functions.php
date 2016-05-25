@@ -1,4 +1,5 @@
-<?php
+ <?php
+ include 'connect.php';
 function getPost($field,$not='')
     {
         $value="";
@@ -6,9 +7,16 @@ function getPost($field,$not='')
         $value=$_POST[$field];
         return $value;
     }
-function textMaker($label,$id,$value='')
+function getRequest($field,$not='')
+    {
+        $value="";
+        if(!empty($_REQUEST[$field])&&$_REQUEST[$field]!=$not)
+        $value=$_REQUEST[$field];
+        return $value;
+    }
+function textMaker($label,$id,$value='',$func='')
 {
-    return "<tr><th style='text-align:left'>$label</th><td><input type='text' id='$id' name='$id' value=\"".$value." \"></td></tr>";
+    return "<tr><th style='text-align:left'>$label</th><td><input type='text' id='$id' name='$id' $func value=\"".trim($value)."\"></td></tr>";
 }
 function updateMaker($table,$columns,$val,$trans_num)
 {
@@ -86,11 +94,11 @@ function convert_to_dateTime($date)
 {
     return date("F d, Y h:m:i a",strtotime($date));
 }
-function listMaker($table_name,$order,$select_list,$title)
+function listMaker($table_name,$order,$select_list,$title,$where='')
 {
     global $conn;
     global $access;
-    //print_r($access);
+	global $list_header;
     $sel=" ";
      if($order=='secretary'|| $order=='engineer')
      $sel=" ,account_executive_id";
@@ -117,14 +125,15 @@ function listMaker($table_name,$order,$select_list,$title)
         $sel.=",id";
         $this_id="id";
      }
-    $select="select ".toStringList($select_list).$sel."  from $table_name order by $order";
-   // echo $select;
+     
+    $select="select ".toStringList($select_list).$sel."  from $table_name $where order by $order";
+//    echo $select;
     ?>
     <h2><?php echo $title;?></h2>
     <form name='form1' id='form1' method=post>
-    <table class='table_data'>
+    <table align=center class='table_data'>
     <?php
-   // echo $select; 
+   //echo $select; 
     $result = $conn->query($select);
     echo "<tr>";
         for($a=0;$a<count($select_list);$a++)
@@ -133,8 +142,10 @@ function listMaker($table_name,$order,$select_list,$title)
             echo "<th>Department</th>";
             else if($select_list[$a]=='account_executive_id')
             echo "<th>Account Executive</th>";
+			else if(!empty($list_header[$a])) 
+			echo "<th>".ucwords(str_replace("_"," ",$list_header[$a]))."</th>";
             else
-            echo "<th>".ucwords(str_replace("_"," ",$select_list[$a]))."</tk>";
+            echo "<th>".ucwords(str_replace("_"," ",$select_list[$a]))."</th>";
         }
         if($order=='secretary'|| $order=='engineer')
             echo "<th>Account Executive</tk>";
@@ -145,14 +156,6 @@ function listMaker($table_name,$order,$select_list,$title)
     $department_list=array();
     while($row=$result->fetch_assoc())
     {
-        /*
-        if(($order=='secretary'|| $order=='engineer') && empty($executive[$row['account_executive_id']]))
-        {
-            $select="select account_executive from master_account_executive_file where account_executive_id='".$row['account_executive_id']."' limit 1";
-            $result2= $conn->query($select);
-            $row2=$result2->fetch_assoc();
-            $executive[$row['account_executive_id']]=$row2['account_executive'];
-        }*/
         echo "<tr>";
             for($a=0;$a<count($select_list);$a++)
             {
@@ -191,24 +194,44 @@ function listMaker($table_name,$order,$select_list,$title)
                 }
                 else if($select_list[$a]=='date_created')
                     echo "<td>".date("F j, Y")."</td>";
+                else if ($select_list[$a]=='sms_slot' && $table_name!='sms_slot_file')
+                {
+                	$select="select sms_slot from  sms_slot_file where slot_id='".$row[$select_list[$a]]."' limit 1";
+                	$result2= $conn->query($select);
+                        $row2=$result2->fetch_assoc();
+                        $sms_slot[$row[$select_list[$a]]]=$row2['sms_slot'];
+                        echo "<td>".$sms_slot[$row[$select_list[$a]]]."</td>";
+                }
+                else if($select_list[$a]=='user_name'&&$table_name=='master_address_file')
+                {
+                	$user="";
+                	if($row[$select_list[$a]]!='')
+                	{
+	                	$select="select user_name from user_file where user_id='".$row[$select_list[$a]]."'";
+	                	$result2= $conn->query($select);
+                        $row2=$result2->fetch_assoc();
+                        $user=$row2['user_name'];
+	                }
+	                echo "<td>".$user."</td>";
+                }
                 else
                 echo "<td>".$row[$select_list[$a]]."</td>";
             }
             if($order=='secretary'|| $order=='engineer')
             echo "<td>".$executive[$row['account_executive_id']]."</td>";
             echo "<td>";
-            if(!empty($access['Edit']))
-            {
+            //if(!empty($access['Edit']))
+            //{
                 if($table_name!='sms_files as a left join po_file as k on a.trans_no=k.trans_no')
-              echo "<td><img  src='assets/Edit.png' name='image' width='20' height='20'  onclick='edit_list(".$row[$this_id].")'></td>";
-            }
-            if(!empty($access['Deactivate']))
-            {
+              echo "<img  src='assets/Edit.png' name='image' width='20' height='20'  style='margin-right:10px' onclick='edit_list(".$row[$this_id].")'>";
+          //  }
+            //if(!empty($access['Deactivate']))
+            //{
                 if($row['mas_status']==0)
-                echo "<td><img  src='assets/check.png' name='image' width='20' height='20' onclick='check_list(".$row[$this_id].")'></td>";
+                echo "<img  src='assets/check.png' name='image' width='20' height='20' style='margin-left:10px' onclick='check_list(".$row[$this_id].")'>";
                 else 
-                echo "<td><img  src='assets/cross.jpg' name='image' width='21' height='20' onclick='deactivate(".$row[$this_id].")'></td>";
-            }
+                echo "<img  src='assets/cross.jpg' name='image' width='21' height='20' style='margin-left:10px' onclick='deactivate(".$row[$this_id].")'>";
+            //}
             
         echo "</tr>";
     }
@@ -241,10 +264,30 @@ function selectMakerValue($label,$id,$array,$function,$value,$val='' )
 function sendText($text,$phone_number,$smsc_id)
 {
 	$text=urlencode($text);
+	
+	try {
 	$response = file_get_contents("http://127.0.0.1:13013/cgi-bin/sendsms?user=sms-app&pass=app125&text=".$text."&to=".$phone_number."&smsc_id="+$smsc_id );
+	}
+	catch(Exception $e)
+	{
+		echo "<script>alert('Failed to send message')</script>";
+	}
+     catch (ErrorException $e) {
+   }
+  // global $conn;
+  /*$select="select sms_id from sms_files order by sms_id desc limit 1";
+  // echo $select;
+   $result2= $conn->query($select);
+	$row2=$result2->fetch_assoc();
+    $sms_id=$row2['sms_id'];
+   $insert="insert into received_file(sms_id,sms,date_sent,received) values('$sms_id','".addslashes($text)."',now(),$phone_number)";
+   $conn->query($insert);*/
+   // $insert="insert into received_file(phone_number,message,received_date) values($phone_number,'".addslashes($text)."',now())";
+  // $conn->query($insert);
 }
 function selectMakerEach($label,$id,$array,$function , $default='')
 {
+//echo "<br>".$function;
     $func="";
     if($function!='')
     $func="onchange='".$function."'";
@@ -302,16 +345,16 @@ function insertMaker($table_name,$columns,$val)
         $insert.="now()";
     }
     $insert.=")";
-    //echo "<br>".$insert;
+  // echo "<br>".$insert;
     $result = $conn->query($insert);
     return $result;
     
 }
-function selectMakerArray($title,$id,$departments,$default='') 
+function selectMakerArray($title,$id,$departments,$default='',$Choose='Choose') 
 {
     $text="<tr><th style='text-align:left'>".$title."</th>";
     $text.= "<td><select id='".$id."' name='".$id."'>";
-    $text.="<option>Choose</option>";
+    $text.="<option>$Choose</option>";
     for($a=0;$a<count($departments);$a++)
     {
         if($default==$departments[$a][1])

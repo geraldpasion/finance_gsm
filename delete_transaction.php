@@ -19,7 +19,7 @@ $insert="insert into  po_remarks_file (remarks,status,date_created,rejected_by,t
 ('".addslashes($remarks)."','$status',now(),'".$_SESSION['uname']."','".$trans_num."')";
  $conn->query($insert);
  echo $insert;
-$update="update po_file set mas_status=0 where trans_no='$trans_num' limit 1";
+$update="update po_file set status='Rejected' where trans_no='$trans_num' limit 1";
  $conn->query($update);
 echo "
 <form id='form1' name='form1' method=post>

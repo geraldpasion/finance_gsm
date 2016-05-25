@@ -134,19 +134,22 @@ while($row=$result->fetch_assoc())
         {
             echo "<td style='text-align:right'><input type='checkbox' onclick='get_class(\"menu_id".$row['menu_id']."\",this.checked)'  class='allCheck menu_head".$row['menu_head']."' id='menu".$row['menu_id']."' name='menu[]' value='".$row['menu_id']."'></td>";
             echo "<td>".$row['menu_name']."</td>";
-            echo "<td>";
-            $select2="select a.type,k.type as checked from access_file as a left join user_access_type_file as k
+            echo "<td >";
+            $select2="select a.menu_name,a.type,k.type as checked from access_file as a left join user_access_type_file as k
             on a.menu_id=k.menu_id and a.type=k.type and k.user_type='$user_type'
             where a.menu_id='".$row['menu_id']."' group by a.type order by a.id";
             $result2 = $conn->query($select2);
            // echo "<br>".$select2;
-                echo "<table class='inside_table'><tr>";
+                echo "<table class='inside_table' STYLE='WIDTH:800px'	><tr>";
             while($row2=$result2->fetch_assoc())
             {
                 $checked="";
                 if($row2['checked']!='')
                 $checked="checked";
-                echo "<td><input type='checkbox' $checked onclick='check_menu(".$row['menu_id'].",this.checked)' name='menuType".$row['menu_id']."[]' id='menuType".$row['menu_id'].$row2['type']."' class='allCheck menu_head".$row['menu_head']." menu_id".$row['menu_id']."' value='".$row2['type']."'>".$row2['type']."</td>";
+$type=$row2['type'];
+				if($row2['menu_name']!='')
+				$type=$row2['menu_name'];
+                echo "<td><input type='checkbox' $checked onclick='check_menu(".$row['menu_id'].",this.checked)' name='menuType".$row['menu_id']."[]' id='menuType".$row['menu_id'].$row2['type']."' class='allCheck menu_head".$row['menu_head']." menu_id".$row['menu_id']."' value='".$row2['type']."'>".$type	."</td>";
             }
             echo "</tr></table>";
             echo "</td>";

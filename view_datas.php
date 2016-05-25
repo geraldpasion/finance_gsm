@@ -1,17 +1,139 @@
 <?php
 include 'page_header.php';
+$type=$_REQUEST['page_type'];
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+?>
+<form action="file_upload.php"   name='form2' id='form2'  method="post" enctype="multipart/form-data">
+
+ <div id='div_here' style='display:none;z-index:11;position:fixed;top:20%;left:32%;vertical-align:middle;border:1px solid black;background-color:white'>
+    <?PHP 
+               $html="<table align=center style='vertical-align:middle'>";
+                
+               $html.="<tr><td colspan=2 style='padding:25px;text-align:center'>";
+             //   $html.="<input type='hidden' id='trans_num' name='trans_num' value='"+trans_num+"'>";
+                $html.="Are you sure you want to Receive this transaction? Do you want to upload an image?</td></tr>";  
+            $html.="<tr>";	
+                $html.="<td colspan=2 style='padding:15px;text-align:center'><input type='file' name='fileToUpload' id='fileToUpload2' accept='image/*''></td>";
+//	$html.="<td colspan=2 style='padding:15px;text-align:center'><input type='file' name='fileToUpload2' id='fileToUpload' accept='image/*''></td>";
+            $html.="</tr>";
+            $html.="<tr><td style='text-align:center;padding-top:15px;padding-bottom:25px'><input type='button' value='Cancel' onclick='close_this()'> </td>";    
+            $html.="<td  style='text-align:center;padding-top:15px;padding-bottom:25px'><input type='button' onclick='fileUpload()' value='Submit'></td></tr>";
+            $html.="</table>";
+//
+echo $html;
+
+?>
+</form>
+<input type='hidden' name='trans_num' id='trans_num2'>
+<input type='hidden' name='type' id='type2' >
+   </div>
+<style>
+.approve
+{
+padding:10px;
+margin:10px;
+font-size:19px;
+}
+</style>
+<?php
+$result = $conn->query("select * from system_steps_file");
+
+while($row=$result->fetch_assoc())
+{
+	$status_name[$row['step_count']]=$row['status_label'];
+	$men="menu_id";
+	if($type==1||$type=='Without PO')
+	$men="menu_id_wo_po";
+	if(!empty($access_menu[$row[$men]]))
+	$button_name[$row['step_count']]=$row['button_name'];
+	else
+	$button_name[$row['step_count']]="";
+	$menu_id[$row['step_count']]=$row[$men];
+}
+$menu_id['Rejected']="Rejected";
 ?>
 <script>
+
+function button_press(label,trans_num,type)
+{
+		if (type=='9')
+        {
+             $('#trans_num2').val(trans_num)
+             $('#type2').val(type)
+             
+               html=""
+               html+="<input type='hidden' id='type2' name='type' value='"+type+"'>"	
+               html+="<table align=center style='vertical-align:middle'>"
+                
+                html+="<tr><td colspan=2 style='padding:25px;text-align:center'>"
+                html+="<input type='hidden' id='trans_num' name='trans_num' value='"+trans_num+"'>";
+                html+="Are you sure you want to Receive this transaction? Do you want to upload an image?</td></tr>";  
+            html+="<tr>"
+                html+="<td colspan=2 style='padding:15px;text-align:center'><input type='file' name='fileToUpload' id='fileToUpload2' accept='image/*''></td>";
+            html+="</tr>"
+            html+="<tr><td style='text-align:center;padding-top:15px;padding-bottom:25px'><input type='button' value='Cancel' onclick='close_this()'> </td>"    
+            html+="<td  style='text-align:center;padding-top:15px;padding-bottom:25px'><input type='button' onclick='fileUpload()' value='Submit'></td></tr>";
+            html+="</table>"
+           //document.getElementById('div_here').style.display="block"
+           //document.getElementById('whiteDiv').style.display="block"
+           $('#div_here').show()
+           $('#whiteDiv').show()
+            
+        }
+        else if(type=='7')
+        {
+           document.getElementById('confirm_div').innerHTML="<input type='button' id='confirm' style='margin-right:5px' value='Confirm' onclick='confirm_pick_btn("+trans_num+")'><input style='margin-left:5px' type='button' id='Cancel' value='Cancel' onclick='cancel()'>"
+          	  document.getElementById('confirm_div2').innerHTML="<input type='button' id='confirm' style='margin-right:5px' value='Confirm' onclick='confirm_pick_btn2("+trans_num+")'><input style='margin-left:5px' type='button' id='Cancel' value='Cancel' onclick='cancel2()'>"
+          
+          if(document.getElementById('payment_type').value!="Check")
+           $('#getCashDetails').dialog('open')
+          else
+           $('#getCheckDetails').dialog('open')
+        }
+        else
+        {
+            if(confirm("Are you sure you want to "+label+"  this transaction?"))
+            {
+                url="xstatus=change_status&status="+type+"&trans_num="+trans_num
+                loadXMLDoc('get_type.php?'+url,releadPage)
+            }
+        }
+        
+}
+function releadPage(result) {
+		//alert(result)
+        type=document.getElementById('page_type').value
+        document.getElementById('form1').action = 'view_data_combine.php?type='+type;
+        document.form1.submit();
+    }
+ function close_this() {
+        $('#div_here').hide()
+        $('#whiteDiv').hide()
+    }
+function reloadPage(result) {
+       
+       document.form1.submit();
+    }
     function hide_this(a)
     {
         document.getElementById('sms_row'+a).style.display='none'
         document.getElementById('2sms_row'+a).style.display='none'
     }
-    function approve_btn(trans_num)
+    function approve_ae_btn(status,trans_num)
     {
-        if (confirm("Are you sure you want to Approve this transaction?")) {
+        if (confirm("Are you sure you want to Approve this transaction by Account Execeutive ?")) {
+            url="xstatus=change_status&status="+status+"&trans_num="+trans_num
+            loadXMLDoc('get_type.php?'+url,reloadPage)
             
-            url="xstatus=change_status&status=Request Release&trans_num="+trans_num
+            return false;
+        }
+    }
+     function approve_QA_btn(status,trans_num)
+    {
+        if (confirm("Are you sure you want to Approve  this transaction	by QA?")) {
+            
+            url="xstatus=change_status&status="+status+"&trans_num="+trans_num
             loadXMLDoc('get_type.php?'+url,reloadPage)
             
             return false;
@@ -20,7 +142,7 @@ include 'page_header.php';
     function reloadPage(result)
     {
         page_type=document.getElementById('page_type').value
-        window.location.assign('view_for_approve.php?page_type='+page_type);
+        window.location.assign('view_data_combine.php?type='+page_type);
     }
     function edit_btn(page_type,trans_num)
     {
@@ -29,15 +151,125 @@ include 'page_header.php';
             document.getElementById('form1').action = 'wo_po_form.php?type='+page_type+"&trans_num="+trans_num;
             document.form1.submit();
     }
+      function confirm_pick_btn2(trans_num)
+    {
+    
+        if(document.getElementById('name2').value==''||
+        document.getElementById('title2').value=='')
+            alert("Please Enter complete Details")
+        else
+        {
+            name=document.getElementById('name2').value
+            cv=""
+            title=document.getElementById('title2').value
+            url="xstatus=readyForPickUp&status=7&trans_num="+trans_num+"&name="+name+"&cv="+cv+"&title="+title
+            loadXMLDoc('get_type.php?'+url,releadPage)
+        }
+        
+    }
+    function resend()
+    {
+    	url="xstatus=resend&trans_num="+trans_num
+        loadXMLDoc('get_type.php?'+url,releadPage)
+    
+    }
+    function fileUpload()
+    {
+    	if(document.getElementById('fileToUpload2').value=='')
+            alert("Please Choose a File")
+        else
+        {
+            document.getElementById('form2').action = 'file_upload.php';
+           document.form2.submit();
+        }
+    }
+    
+    $(function() {
+    
+	    $( "#reject_div" ).dialog(
+	    {
+	    height:275,
+	    modal: true,
+	    width:380
+	    
+	    }
+	    );
+	    $("#reject_div").dialog( "close" );
+	    
+	    
+	    $( "#getCheckDetails" ).dialog(
+	    {
+	    height:275,
+	    modal: true,
+	    width:380
+	    
+	    }
+	    );
+	    
+	    $("#getCheckDetails").dialog( "close" );
+	     $( "#getCashDetails" ).dialog(
+	    {
+	    height:275,
+	    modal: true,
+	    width:380
+	    
+	    }
+	    );
+	    
+	    $("#getCashDetails").dialog( "close" );
+	    
+ });
+  
+     function confirm_pick_btn(trans_num)
+    {
+        if(document.getElementById('name').value==''||
+        document.getElementById('cv').value==''||
+        document.getElementById('title').value=='')
+            alert("Please Enter complete Details")
+        else
+        {
+            name=document.getElementById('name').value
+            cv=document.getElementById('cv').value
+            title=document.getElementById('title').value
+            url="xstatus=readyForPickUp&status=7&trans_num="+trans_num+"&name="+name+"&cv="+cv+"&title="+title
+            loadXMLDoc('get_type.php?'+url,releadPage)
+        }
+        
+    }  function close_this() {
+        $('#div_here').hide()
+        $('#whiteDiv').hide()
+    }
 </script>
 <?php
 $trans_num=$_REQUEST['trans_num'];
 if(empty($_SESSION['uname']))
     echo "<script>window.location.assign('login.php')</script>";
 echo "<form name='form1' id='form1' method=post>";
+?>	
+<div id='getCheckDetails' style='display:none;z-index:11;border:1px solid black;background-color:white;padding:10px'>
+    <table>
+        <?php
+        echo "<tr><th colspan=3 style='text-align:center;padding:10px' >Enter Check Details</th></tr>";
+        echo textMaker('Title','title','');
+        echo textMaker('Name of Check','name','');
+        echo textMaker('CV#','cv','');
+        echo "<tr><td colspan=2 id='confirm_div' STYLE='text-align:center;padding:10px'></td></tr>";
+        ?>
+    </table>
+</div>
 
+<div id='getCashDetails' style='display:none;z-index:11;border:1px solid black;background-color:white;padding:10px'>
+    <table>
+        <?php
+        echo "<tr><th colspan=3 style='text-align:center;padding:10px' id='check_header'>Enter Cash Details</th></tr>";
+        echo textMaker('Title','title2','');
+        echo textMaker('Name ','name2','');
+         echo "<tr><td colspan=2 id='confirm_div2' STYLE='text-align:center;padding:10px'></td></tr>";
+        ?>
+    </table>
+</div>
+<?php
 
-$type=$_REQUEST['page_type'];
 
 echo "<input type='hidden' id='page_type' name='page_type' value='$type'>";
 echo "<input type='hidden' id='trans_num' name='trans_num'  value='$trans_num'>";
@@ -55,8 +287,8 @@ if($type=="po_type"||$type=="With Po")
 }
 else
 {
-    $column=array('Letter Code', 'Requestor', 'Title', 'Company Name', 'Secretary','Engineer', 'Supplier', 'Payment Type', 'Status', 'JO',  'Item Description','Date Created','Created By');
-    $val=array('letter_code', 'requestor', 'title', 'company_name', 'secretary','engineer', 'supplier', 'payment_type',  'status', 'jo', 'item_description','date_created','created_by','status');
+    $column=array('Letter Code', 'Requestor', 'Title', 'Company Name', 'Secretary', 'Supplier', 'Payment Type', 'Status','TXT&ID_NO','Date Created','Created By');
+    $val=array('letter_code', 'requestor', 'title', 'company_name', 'secretary', 'supplier', 'payment_type',  'status','TXT&ID_NO','date_created','created_by','status');
     $head="<h2>Without Po</h2>";
 }
 
@@ -77,12 +309,16 @@ if ($result->num_rows > 0)
      $rows=$result->fetch_assoc();
      $secretary_name=$rows['name'];
      
-     $select="select concat(first_name,' ',last_name) as name from master_address_file where
-    account_type='Engineer' and mas_status=1 and account_id='$engineer' limit 1";
-     $result = $conn->query($select);
-     $rows=$result->fetch_assoc();
-     $engineer_name=$rows['name'];
-   
+     IF($engineer!="N/A")
+     {
+     	$select="select concat(first_name,' ',last_name) as name from master_address_file where
+    	account_type='Engineer' and mas_status=1 and account_id='$engineer' limit 1";
+     	$result = $conn->query($select);
+     	$rows=$result->fetch_assoc();
+     	$engineer_name=$rows['name'];
+   }
+   else
+   $engineer_name="N/A";
    $select2="select phone_number,concat(first_name,' ',last_name) as requestor  from master_address_file where account_type='Account Executive' and mas_status=1 and account_id='$requestor_id' limit 1";
     $result2 = $conn->query($select2);
     $row3=$result2->fetch_assoc();
@@ -96,8 +332,8 @@ Message:".$_REQUEST['chat_box'];
         values('".addslashes($_REQUEST['chat_box'])."','".$_SESSION['uname']."',now(),'".$trans_num."')";
         $conn->query($insert);
         
-        sendText($text,$row3['phone_number']);
-
+        sendText($text,$row3['phone_number'],1);
+		
         //$text=urlencode($text);
         //$response = file_get_contents("http://127.0.0.1:13013/cgi-bin/sendsms?user=sms-app&pass=app125&text=$text&to=".$row3['phone_number']);
     }
@@ -121,8 +357,8 @@ Message:".$_REQUEST['chat_box'];
     echo "<table style='border-collapse:collapse'>";
     echo "<tr><th colspan=2 style='text-align:left'>".$head."</th></tr>";
     
-    
-    
+    $status=$row['status'];
+     $ae_status=$row['ae_status'];
     for($a=0;$a<count($val)-1;$a++)
     {
         echo "<tr>";
@@ -131,17 +367,40 @@ Message:".$_REQUEST['chat_box'];
             echo $requestor;
             else if($val[$a]=='secretary')
             echo $secretary_name;
-            else if($val[$a]=='engineer')
+            else if($val[$a]=='engineer' )
             echo $engineer_name;
             else if($val[$a]=='date_created')
             echo convert_to_dateTime($row[$val[$a]]);
+			else if($val[$a]=='status')
+			{
+				$value=$row[$val[$a]];
+				if($value==$for_qa_approval)
+				$value=$qa_text;
+				else if($value==$for_ae_approval)
+				$value=$ae_text;
+				//echo $value;	
+				
+				//$value=$row2['status'];
+				if($status>=4 && $ae_status!=1)
+				$value=4;
+				if($value=='Received')
+				echo "Received";
+				else if (!empty($status_name[$value]))
+				echo $status_name[$value];
+				else
+				echo $value;
+				
+			}
             else if($val[$a]!='')
             echo $row[$val[$a]];
-            
+               
             echo "</td>";
         echo "</tr>";
     }
+    echo "<input type='hidden' id='payment_type' value='".$row['payment_type']."'>";
     $status=$row['status'];
+    $ae_status=$row['ae_status'];
+    //echo "<br>Status".$row['status'];
     if($result818->num_rows > 0)
     {
         echo "<tr><th colspan=2 style='text-align:left;font-size:25px;padding:10px'>Items</th></tr>";
@@ -190,11 +449,15 @@ Message:".$_REQUEST['chat_box'];
         //echo $select;
         while($row2=$result->fetch_assoc())
         {
+			$t="Check";
+			if($row2['cv']=='')
+			$t="Cash";
             echo "<tr><td colspan=5><table>";
-            echo "<tr><th colspan=2 style='padding-top:10px;font-size:19px'>Check Details</th></tr>";
+            echo "<tr><th colspan=2 style='padding-top:10px;font-size:19px'>$t Details</th></tr>";
             echo "<tr><th style='width:50px;text-align:left'>Name</th><td>name".$row2['name']."</td></tr></tr>";
             echo "<tr><th style='width:50px;text-align:left'>Title</th><td>".$row2['title']."</td></tr>";
-            echo "<tr><th style='width:50px;text-align:left'>CV</th><td>".$row2['cv']."</td></tr>";
+	        if( $row2['cv']!='')    
+			echo "<tr><th style='width:50px;text-align:left'>CV</th><td>".$row2['cv']."</td></tr>";
             echo "</table></td></tr>";
         }
     }
@@ -210,17 +473,65 @@ Message:".$_REQUEST['chat_box'];
         {
             echo "<tr><th style='width:115px;text-align:left'>Rejected By</th><td>".$row2['rejected_by']."</td></tr>";
             echo "<tr><th style='width:115px;text-align:left'>Date Rejected</th><td>".$row2['date_created']."</td></tr>";
-            echo "<tr><th style='width:115px;text-align:left'>Status</th><td>".$row2['status']."</td></tr>";
+            echo "<tr><th style='width:115px;text-align:left'>Status</th><td>";
+		
+			$value=$row2['status'];
+			
+			echo $value."</td></tr>";
             echo "<tr><th style='width:115px;text-align:left'>Remarks</th><td>name".$row2['remarks']."</td></tr></tr>";
            
            
         }
          echo "</table></td></tr>";
     }
-    if(($status=='pending'||$row['mas_status']!=1) && $row['created_by']==$_SESSION['uname'])
+    
+    //$access[$for_qa_page]
+    //For QA Approval
+    echo "<tr><td colspan=2 style='text-align:center;padding:20px'>";
+    
+    
+    	$temp_status=$status;
+		if($status>=4 &&!empty($access_menu[$menu_id[4]])&&$ae_status!=1)
+		{
+			echo "<input type='button' class='approve' value='".$button_name[4]."'onclick='button_press(this.value,".$trans_num.",4)'>";
+			$temp_status=4;
+			
+		}
+		if(empty($menu_id[$status]))
+			$menu_id[$status]="";
+		
+		
+		if($status==4)
+		$status=$status+1;
+    	if($status=='QA Approve' &&!empty($access_menu[$menu_id[2]]))
+		echo "<input type='button' class='approve' onclick='button_press(this.value,".$trans_num.",2)' value='".$button_name[2]."'>";	
+		else if($status=='pending')
+		echo "";
+		else if(!empty($access_menu[$menu_id[$status]]))
+			echo "<input type='button' class='approve'  onclick='button_press(this.value,".$trans_num.",\"".$status."\")' value='".$button_name[$status]."'>";
+		else
+		echo "";
+		/*if(!empty($access_menu[$menu_id[$status]]))
+			echo "<input type='button' class='approve'  onclick='button_press(this.value,".$trans_num.",\"".$status."\")' value='".$button_name[$status]."'>";
+		*/
+		 if(!empty($access_menu[$menu_id[4]]) && $ae_status==2)
+			echo "<input type='button' class='approve'  onclick='resend(this.value,".$trans_num.",3)' value='Resend SMS'>";
+		
+	echo "</td></tr>";
+    /*unset($access[$for_qa_page]);
+    if($type=='With Po' &&!empty($_SESSION['access_type']['RM with PO']['Approve/Reject sending to AE']))
+		$access[$for_qa_page]="Yes";
+	else if (!empty($_SESSION['access_type']['RM without PO']['Approve/Reject sending to AE']))
+	$access[$for_qa_page]="Yes";
+
+    if(($status=='pending'||$row['mas_status']!=1) && $row['created_by']==$_SESSION['uname'] )
     echo "<tr><td colspan=2 style='text-align:center;padding-top:10px'><input onclick='edit_btn(\"".$type."\",".$trans_num.")' style='padding:10px;height:50px' type='button' value='Edit'></td></tr>";
-    else if($status=='For Approval')
-    echo "<tr><td colspan=2 style='text-align:center;padding-top:10px'><input onclick='approve_btn(".$trans_num.")' style='padding:10px;height:50px' type='button' value='Approve'></td></tr>";
+    else if($status==$for_qa_approval && !empty($access[$for_qa_page]))
+    echo "<tr><td colspan=2 style='text-align:center;padding-top:10px'><input onclick='approve_QA_btn(\"$for_qa_approval\",".$trans_num.")' style='font-size:14px;padding:25px;height:50px' type='button' value='$qa_approve_btn'></td></tr>";
+    else if($status==$for_ae_approval&& !empty($access[$for_ae_page]))
+    echo "<tr><td colspan=2 style='text-align:center;padding-top:10px'><input onclick='approve_ae_btn(\"$for_ae_approval\",".$trans_num.")' style='font-size:14px;padding:25px;height:50px' type='button' value='$ae_approve_btn'></td></tr>";
+    */
+    
     if($status!='pending')
     {
         echo "<tr><th colspan=2><h2>Chat Box</h2> </th></tr>";
@@ -250,7 +561,7 @@ Message:".$_REQUEST['chat_box'];
         echo "</table>";
         echo "</td>";
     
-        $select="select * from sms_files where hide!=1 and trans_no='0' and received='$phone_number' order by date_sent desc ";
+        $select="select * from sms_files where hide!=1 and trans_no='0' and (received='$phone_number' ) order by date_sent desc ";
         $result = $conn->query($select);
         if($result->num_rows > 0)
         {

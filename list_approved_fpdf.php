@@ -231,14 +231,23 @@ $pdf->SetFont('Times','',10);
 	$pdf->AddPage();
 	$y=$pdf->getY();
 	//echo "<br>".$pdf->getY();
+		$x=$pdf->GetX();
+	$image1 = "images/logo.gif";
+	$pdf->Cell( 40, 40, $pdf->Image($image1, $pdf->GetX(), $pdf->GetY(), 33.78), 0, 0, 'L', false );
+
 		$pdf->Ln();
 		$pdf->Ln();
 		$pdf->Ln();
 		$pdf->Ln();
+		$pdf->setY($y+19);
+		
+		$image2 = "images/logo6.jpg";
+		$pdf->Cell( 140, 1140, $pdf->Image($image2, $pdf->GetX(), $pdf->GetY(), 333.78), 0, 0, 'L', false );
+
 		$pdf->setY($y+22);
 	//	echo "<br>2".$pdf->getY();
 	$data2=array();
-	
+		$pdf->setX($x);
 	$pdf->row($width,$head,1,	$data2	,$data2);
 	while($row=$result->fetch_assoc())
 	{

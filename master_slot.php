@@ -1,7 +1,11 @@
 <?php
 include 'page_header.php';
+?>
+
+<?php
 echo "<form name=form1 id=form1 method=post>";
-if(!empty($_POST['submit_btn']))
+echo "<input type='hidden' id='status' name='status' value=''>";
+if(!empty($_POST['status']))
 {
     $sms_slot=$_POST['sms_slot'];
     $phone_number=$_POST['phone_number'];
@@ -17,16 +21,17 @@ if(!empty($_POST['submit_btn']))
     </script>";
        
 }
+//print_r($_POST);
 if(!empty($_POST['update_btn']))
 {
     $sms_slot=$_POST['sms_slot'];
     $phone_number=$_POST['phone_number'];
     $slot_id=$_POST['slot_id'];
     $result=updateMaker('sms_slot_file',array('sms_slot','phone_number'),array($sms_slot,$phone_number)," where slot_id='$slot_id'");
-   // echo $result;
+    //echo $result;
    echo "<script>alert('Successfully Updated New SMS Slot');
         document.getElementById('form1').action = 'sms_slot_list.php';
-            document.form1.submit();
+         //   document.form1.submit();
     </script>";
 }
 
@@ -54,15 +59,38 @@ if(!empty($_REQUEST['trans_num']))
     echo textMaker('Phone Number','phone_number',$phone_number);
     echo "<tr>";
         echo "<td colspan=2 style='text-align:center'>";
-            if(empty($_REQUEST['trans_num']))
-            echo "<input type='Submit' name='submit_btn' value='Submit' style='margin:15px'>";
+            
+
+		if(empty($_REQUEST['trans_num']))
+            echo "<input type='button'  onclick='submit_btn_slot()'  name='submit_btn' value='Submit' style='margin:15px'>";
             else
             echo "<input type='submit' name='update_btn' value='Update' style='margin:15px'>";
             
-            echo "<input type='button' value='Cancel' style='margin:15px'>";
+            echo "<input type='button' onclick='cancel_btn()' value='Cancel' style='margin:15px'>";
         echo "</td>";
     echo "</tr>";
+	//echo "<input type='hidden' name='status'>";
     ?>
 </table>
 
 </form>
+<script>
+function submit_btn_slot()
+{
+	if($('#sms_slot').val()=='' ||$('#sms_slot').val()=='smsc')
+	alert("Please Enter SMS Slot")
+	else if($('#phone_number').val()=='')
+	alert("Please enter a phone number")
+	else
+	{
+			$('#status').val("Submit")
+	 document.form1.submit();
+	}
+}
+function cancel_btn()
+{
+ 	document.getElementById('form1').action = 'sms_slot_list.php'
+    document.form1.submit();
+}
+
+</script>

@@ -232,12 +232,22 @@ $pdf->SetFont('Times','',10);
 		$width=array(32,14,30,30,25,25,14,14,40,15,25,23,45,45	);
 	$pdf->AddPage();
 	$y=$pdf->getY();
+	$x=$pdf->GetX();
+$image1 = "images/logo.gif";
+$pdf->Cell( 40, 40, $pdf->Image($image1, $pdf->GetX(), $pdf->GetY(), 33.78), 0, 0, 'L', false );
+
+	
 	//echo "<br>".$pdf->getY();
 		$pdf->Ln();
 		$pdf->Ln();
 		$pdf->Ln();
 		$pdf->Ln();
+		$pdf->setY($y+19);
+		$image2 = "images/logo6.jpg";
+$pdf->Cell( 140, 1140, $pdf->Image($image2, $pdf->GetX(), $pdf->GetY(), 333.78), 0, 0, 'L', false );
+
 		$pdf->setY($y+22);
+		$pdf->setX($x);
 	//	echo "<br>2".$pdf->getY();
 	$data2=array();
 	
@@ -278,9 +288,9 @@ $pdf->SetFont('Times','',10);
 
 	}
 	
-$title = '20000 Leagues Under the Seas';
+$title = '';
 $pdf->SetTitle($title);
-$pdf->SetAuthor('Jules Verne');
+$pdf->SetAuthor('');
 
 //$pdf->PrintChapter(1,'A RUNAWAY REEF','20k_c1.txt');
 //$pdf->PrintChapter(2,'THE PROS AND CONS','20k_c2.txt');

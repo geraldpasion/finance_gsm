@@ -1,8 +1,10 @@
 <?php
 include 'connect.php';
+//error_reporting(0);
+
+
 $trans_num=$_REQUEST['trans_num'];
 $type=$_REQUEST['type'];
-
 
 $target_dir = "uploads/";
 $file_name=basename($_FILES["fileToUpload"]["name"]);
@@ -12,6 +14,8 @@ $imageFileType = pathinfo($target_file,PATHINFO_EXTENSION);
 // Check if image file is a actual image or fake image
 if(isset($_REQUEST['type'])) {
     $check = getimagesize($_FILES["fileToUpload"]["tmp_name"]);
+
+//  $check = getimagesize($_FILES["test"]["tmp_name"]);
     if($check !== false) {
         $update="update po_file set received_date=now(), status='Received' , file_name='".addslashes($file_name)."' where trans_no='$trans_num'";
         $conn->query($update);
@@ -19,7 +23,7 @@ if(isset($_REQUEST['type'])) {
         //echo "File is an image - " . $check["mime"] . ".";
         $uploadOk = 1;
     } else {
-        alert( "File is not an image.");
+        echo "<script>alert( 'File is not an image.')</script>";
         $uploadOk = 0;
     }
 }
@@ -32,8 +36,8 @@ echo "</form>";
 <script>
     function back() {
         
-    document.getElementById('form1').action = "view_for_approve.php";
-    //document.form1.submit();
+    document.getElementById('form1').action = "view_data_combine.php";
+    document.form1.submit();
     }
     
 </script>
@@ -53,7 +57,17 @@ $text="Letter Code:".$letter_code."
 $text.="Date:".date("F d, Y h:m:i a",strtotime($date))."
 Received ";
 $text=urlencode($text);
+
+try {
 $response = file_get_contents("http://127.0.0.1:13013/cgi-bin/sendsms?user=sms-app&pass=app125&text=$text&to=".$phone_number);
-                
+}
+catch(Exception $e)
+{
+		echo "<script>alert('Failed to send message')</script>";
+}
+catch (ErrorException $e) {
+    // ...
+}
+               
 ?>
 <body onload='back()'></body>

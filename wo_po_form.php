@@ -1,9 +1,30 @@
 <?php
     include 'page_header.php';
             $trans_num="";
+$update_type="";
     ?>
+    <style>
+    .cross_image
+    {
+    width:15;
+    height:15;
+    }
+    </style>
     <div id='child'></div>
     <script>
+    function check_po(value)
+    {
+    	url="xstatus=checkPO&PO="+value
+        result=loadXMLDoc('get_type.php?'+url,show_result)
+    }
+    function show_result(value)
+    {
+    	if(value!='')
+    	{
+    		alert(value)
+    		$('#po').val('')
+    	}
+    }
         function addCommas(nStr)
         {
             nStr += '';
@@ -15,6 +36,15 @@
                 x1 = x1.replace(rgx, '$1' + ',' + '$2');
             }
             return x1 + x2;
+        }
+        function clear_row(a)
+        {
+        	$('#item'+a).val("")
+        	$('#description'+a).val("")
+        	$('#quantity'+a).val("")
+        	$('#unit_price'+a).val("")
+        	$('#total_amount'+a).val("")
+			computeAmount(a)
         }
         function addMore() {
             
@@ -37,7 +67,7 @@
             html=document.getElementById('table_items').innerHTML
            // alert(html)
             add="<tr>";
-            add+="<td>"+item_no+"</td>";
+            add+="<td>"+item_no+"<img  src='assets/cross.jpg' name='image' class='cross_image' onclick='clear_row("+item_no+")'></td>";
             add+="<td><input type='text' id='item"+item_no+"' name='item"+item_no+"' placeholder='item' value=''></td>";
             add+="<td><input type='text' id='description"+item_no+"' name='description"+item_no+"' placeholder='description'></td>";
             add+="<td><input type='text' id='quantity"+item_no+"' name='quantity"+item_no+"' placeholder='quantity' onchange='computeAmount("+item_no+")'></td>";
@@ -65,13 +95,13 @@
             unit_price2=parseFloat(document.getElementById('unit_price'+a).value)
             if(unit_price2==undefined)
             unit_price2="";
-            if(description2==undefined)
-            description2="";
+            //if(description2==undefined)
+            //description2="";
             if (!isNaN(quantity2) && !isNaN(unit_price2)) {
                 amount=quantity2*unit_price2
                 amount=addCommas(amount)
                 //amount=amount.toFixed(2)
-                document.getElementById('total_amount'+a).value=amount2
+                document.getElementById('total_amount'+a).value=amount
              //   alert(document.getElementById('total_amount'+a).value)
             }
             item_no=document.getElementById('item_no').value
@@ -193,10 +223,13 @@
         $po="---"; 
        if(!empty($_REQUEST['po']))
            $po=$_POST['po'];
+        $TXT_ID_NO="---";
+        if(!empty($_REQUEST['TXT&ID_NO'])) 
+        $TXT_ID_NO=$_REQUEST['TXT&ID_NO'];
        $table="po_file";
        $engineer=getPost('engineer','Choose');
        $page=$_POST['page'];
-       $status="For Approval";
+       $status=$for_qa_approval;	
        if($_POST['status']=="Save")
        $status="pending";
         $number_code=$_POST['number_code'];
@@ -273,32 +306,31 @@ Item:".$item;
                     $total_amount+=($quantity*$unit_price);  
            }
             $result=updateMaker($table,array('total_amount'),array($total_amount),"where trans_no='$trans_num'");  
-             
-            $type1="type=With Po";
             if($type=="withoutpo")
             $type1="type=Without Po";
-                $trans_num=$trans_no;	
-               if($status!='Save')
+                $trans_no=$trans_num;
+               if($status!='Save'&&$status!='pending')
                {
                     echo "<script>alert('Successfull Transaction');</script>";
            
                 $select="select phone_number,smsc_id from master_address_file where account_type='Account Executive' and mas_status=1 and account_id='$requestor' limit 1";
                 $result = $conn->query($select);
+
                 $row=$result->fetch_assoc();
                 
-                 send_text($text,$row['phone_number'],$smsc_id); 
+                 sendText($text,$row['phone_number'],$row['smsc_id']); 
                 //$text=urlencode($text);
                 //$response = file_get_contents("http://127.0.0.1:13013/cgi-bin/sendsms?user=sms-app&pass=app125&text=$text&to=".$row['phone_number']);
                 	$trans_no="";
 					$trans_num="";
 					$number_code="";
-              
                }
-             //    echo "<script>document.getElementById('form1').action='view_data.php?".$type1."';";
-                 
-              // echo "document.form1.submit();";
+				if($status==$for_qa_approval)
+				{
+            		   echo "<script>document.getElementById('form1').action='view_data_combine.php?".$type1."';";
+              			echo "document.form1.submit();";
+				}
               echo " </script>";
-           
         }
         else 
         {
@@ -319,19 +351,20 @@ Item:".$item;
            }
            $letter_code=get_letter_code($number_code);
            $columns=array('trans_no', 'number_code', 'letter_code', 'requestor', 'title', 'company_name', 'secretary', 'supplier',
-           'payment_type',  'date_created', 'status', 'jo', 'po','item_description','engineer','page','created_by');
+           'payment_type',  'date_created', 'status', 'jo', 'po','TXT&ID_NO','item_description','engineer','page','created_by');
            $val=array($trans_no, $number_code, $letter_code, $requestor, $title, $company_name, $secretary, $supplier,
-           $payment_type, 'now()', $status, $jo, $po,$item_description,$engineer,$page,$_SESSION['uname']);
+           $payment_type, 'now()', $status, $jo, $po,$TXT_ID_NO,$item_description,$engineer,$page,$_SESSION['uname']);
            
            
            if(!empty($requestor) && $requestor!=0)
            {
-            $select="select phone_number,concat(first_name,' ',last_name) as name from master_address_file where
+            $select="select phone_number,concat(first_name,' ',last_name) as name,smsc_id from master_address_file where
             account_type='Account Executive' and mas_status=1 and account_id='$requestor' limit 1";
             $result = $conn->query($select);
             $row=$result->fetch_assoc();
             $phone_number=$row['phone_number'];
             $requestor_name=$row['name'];
+			$smsc_id=$row['smsc_id'];
            }
            $select="select concat(first_name,' ',last_name) as name from master_address_file where
            account_type='Secretary' and mas_status=1 and account_id='$secretary' limit 1";
@@ -350,14 +383,19 @@ Requestor:".$requestor_name."
 Title:".$title."
 Company Name:".$company_name."
 Secretary:".$secretary_name."
-Engineer:".$engineer_name."
 Supplier:".$supplier."
-Payment Type:".$payment_type."
-Jo:".$jo;
+Payment Type:".$payment_type;
 if(!empty($_REQUEST['po']))
 {
     $text.="
+    Engineer:".$engineer_name."
+    Jo:".$jo."
     Po#".$po;
+}
+else
+{
+	$text.="
+    $TXT_ID_NO#".$TXT_ID_NO;
 }
 $text.="
 Page:".$page;
@@ -394,37 +432,36 @@ Total Amount:".$total_amount;
             $type1="type=With Po";
             if($type=="withoutpo")
             $type1="type=Without Po";
-            
             $trans_num=$trans_no;
-            
                if($status!='Save' && $status!='pending')
                {
                   // $text=urlencode($text);
-                   send_text($text,$phone_number);
-                   
-                //    echo $response;
-ECHO "<br>Trans_num".$trans_num." ".$trans_no;
-		$trans_no="";
-$trans_num="";
-$number_code="";	
+                   sendText($text,$phone_number,$smsc_id);
+					$trans_no="";
+					$trans_num="";
+					$number_code="";	
                     echo "<script>alert('Successfull Transaction');</script>";
                }
-              //  echo "<script>document.getElementById('form1').action='view_data.php?".$type1."';";
-               
-             //  echo " document.form1.submit();";
-               
-               echo "</script>";
+			$_REQUEST['trans_num']=$trans_num;
+			 if($status=="For Approval")
+			{
+				echo "<script>document.getElementById('form1').action='view_data_combine.php?".$type1."';";
+	            echo " document.form1.submit();";
+				
+			}
+			echo "</script>";
+			$update_type="Edit";  
         }
-        
-    }
+   }
     if($type=="withoutpo")
     $type="Without PO";
     else
     $type="With Po";
     ?>  
         <input type='hidden' id='status' name='status'>
-        <input type='hidden' id='update_type' name='update_type'>
-        <h2><?PHP ECHO $type;?></h2>
+        <input type='hidden' id='update_type' name='update_type' value='<?php echo $update_type;?>' >
+        <h2>
+        <?php ECHO $type;?></h2>
     <table>
     <?php
         $requestor1 ="";
@@ -437,15 +474,12 @@ $number_code="";
         $page="";
         $supplier="";
         $payment_type="";
-
-        $item_description="";
+		$item_description="";
     if($trans_num!='')
     {
         echo "<input type='hidden' name='trans_num' id='trans_num' value='$trans_num'>";     
         $select="select * from po_file where trans_no='$trans_num' limit 1";
         $result = $conn->query($select);
-       // echo $select;
-       
         $row= $result->fetch_assoc();
         echo "<input type='hidden' name='number_code' id='number_code' value='".$row['number_code']."'>";
         $number_code=$row['number_code'];
@@ -457,6 +491,7 @@ $number_code="";
         $engineer1=$row['engineer'];
         $jo=$row['jo'];
         $po=$row['po'];
+        $TXT_ID_NO=$row['$TXT&ID_NO'];
         $item_description=$row['item_description'];
         $page=$row['page'];
         $supplier=$row['supplier'];
@@ -531,13 +566,30 @@ echo "<tr><th style='text-align:left'>Letter Code:</th><th style='text-align:lef
     echo selectMakerEach('Requestor','requestor',$requestor,'getRequestor(this.value)',$requestor1);
     echo textMaker('Title/Remarks','title',$title);
     echo textMaker('Company Name','company_name',$company_name);
+    
     echo selectMakerEach('Secretary','secretary',$secretary,'',$secretary1);
-    echo selectMakerEach('Engineer','engineer',$engineer,'',$engineer1);
-    echo textMaker('jo','jo',$jo);
     if($type=='With Po')
-    echo textMaker('PO#','po',$po);
-     echo textMaker('Item Description','item_description',$item_description);
+    echo selectMakerEach('Engineer','engineer',$engineer,'',$engineer1);
+    else
+    echo "<input type='hidden' id='engineer' name='engineer' value='N/A'>";
+    if($type=='With Po')
+    echo textMaker('jo','jo',$jo);
+    else
+    echo "<input type='hidden' id='jo' name='jo' value='N/A'>";
+    
+    if($type=='With Po')
+    	echo textMaker('PO#','po',$po,'onchange="check_po(this.value)"');
+    else
+    	echo textMaker('TXT&ID NO#','TXT&ID_NO',$TXT_ID_NO,'');
+    if($type=='With Po')
+    echo textMaker('Item Description','item_description',$item_description);
+    else
+    echo "<input type='hidden' id='item_description' name='item_description' value='N/A'>";
+    if($type=='With Po')
     echo textMaker('Page#','page',$page);
+    else
+    echo "<input type='hidden' id='page' name='page' value='N/A'>";
+    
     echo textMaker('Supplier','supplier',$supplier);
     echo selectMaker('Payment Type','payment_type',array('Cash','Check'),'',$payment_type);
     ?>
@@ -560,7 +612,7 @@ echo "<tr><th style='text-align:left'>Letter Code:</th><th style='text-align:lef
                             while($row= $result->fetch_assoc())
                             {
                                 echo "<tr>";
-                                echo "<td>".(++$a)."</td>";
+                                echo "<td>".(++$a)."<img  src='assets/cross.jpg' name='image' width='20' height='20' onclick='clear_row(".$a.")'></td>";
                                 echo "<td><input type='text' id='item".$a."' name='item".$a."' placeholder='item' value='".$row['item']."'></td>";
                                 echo "<td><input type='text' id='description".$a."' name='description".$a."'  value='".$row['description']."' placeholder='description'></td>";
                                 echo "<td><input type='text' id='quantity".$a."' name='quantity".$a."'  value='".$row['quantity']."' placeholder='quantity'  onchange='computeAmount($a)'></td>";

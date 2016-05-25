@@ -39,6 +39,29 @@ if(!empty($_REQUEST['status']))
 }
 
 //function listMaker($table_name,$order,$select_list,$title)
+$mas_status=getRequest('mas_status','');
+$user_active="class='active selected_tab '";
+$user_inactive="class='tabby'";
+$user_all="class='tabby'";
+$where="";
+if($mas_status=='')
+	$mas_status=1;
+else if($mas_status==-1)
+{
+	$user_active="class='tabby'";
+	$user_all="class='active selected_tab '";
+}
+else if($mas_status==2)
+{
+	$user_active="class='tabby'";
+	$user_inactive="class='active selected_tab '";
+	$mas_status=0;	
+	$where=" where mas_status=0 ";
+}
+
+$where=whereMaker($where,'mas_status',$mas_status,-1);
+$data=explode("?",$page_name);
+$page_name=$data[0];
 
 $table_name='';
 $order='date_sent desc';
